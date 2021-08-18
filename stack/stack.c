@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>		// malloc()
-#include <string.h>		// node 안에 문자열 형식으로 들어갈 것임
+#include <string.h>		// node 안에 문자열 형식으로 들어갈 것임 strcpy()
 
 /*
 	Stack Data Structure
