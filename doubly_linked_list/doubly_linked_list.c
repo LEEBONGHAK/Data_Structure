@@ -8,20 +8,22 @@
 
 	- 데이터들은 모두 떨어져 있지만, 끈(주소)으로 묶여 있다.
 
-	Single Linked List Data Structure (단방향 리스트)
+	Doubly Linked List Data Structure (양방향 리스트)
 
-	- List안에서 앞쪽에서 뒷쪽을 가리키는 방향성을 가진 끈으로 순서가 있는 데이터를 연결하는 방식
-	- 데이터, 다음 요소를 가리키는 포인터 로 구성되어 있음
-	- HEAD 포인터가 가리키는 요소에서 시작하고 NEXT 포인터에 종료 정보를 저장한 요소로 끝남
+	- List안에서 앞쪽에서부터 뒷쪽을 가리키는 끈과 뒤에서 앞을 가리키는 끈 2개를 사용하여 순서가 있는 데이터들을 연결하는 방식
+	- 데이터, 이전 요소를 가리키는 포인터, 다음 요소를 가리키는 포인터 로 구성되어 있음
+	- HEAD 포인터가 가리키는 요소에서 시작하고 NEXT 포인터에 종료 정보를 저장한 요소로 끝나는 끈과 TAIL포인터가 가리키는 요소에서 시작하고 PREV 포인터에 종료 정보를 저장한 요소로 끝나는 끈으로 관리
 
 	참고
 	- 스기우라 켄 / 그림으로 배우는 알고리즘 Alogorithm Basic
+	- 코딩하는거니 / url : https://www.youtube.com/watch?v=z28hgyxgORY
 */
 
-typedef struct singleListNode {	// node 구조제 정의
+typedef struct doubleListNode {	// node 구조제 정의
 
 	int data;			// node 데이터
-	struct singleListNode* next;	// 다음 node 주소
+	struct doubleListNode* next;	// 이전 node 주소
+	struct doubleListNode* prev;	// 다음 node 주소
 } Node;
 
 
@@ -29,8 +31,10 @@ Node* createNode(int data) {	// list을 구성하는 node의 메모리와 초기
 
 	Node* newNode = (Node*)malloc(sizeof(Node));	// node의 메모리 할당
 
+	// variable initialization
 	newNode->data = data;
 	newNode->next = NULL;		// list의 next를 가르키는 link 초기화
+	newNode->prev = NULL;		// list의 prev를 가르키는 link 초기화
 
 	return newNode;
 }
@@ -58,12 +62,12 @@ Node* getNodeAt(Node* head, int index) { // head node에서 index에 해당하�
 	return NULL;	// 모든 곳에서 못 찾으면 NULL 반환
 }
 
-int totalCountNode(Node* head) {		// List 내 node 개수를 구하는 함수
+int countNode(Node* head) {		// List 내 node의 위치(index)를 구하는 함수
 
 	int count = 0;
 	Node* horse = head;
 
-	while (horse != NULL) {
+	while (horse->next != NULL) {
 
 		horse = horse->next;
 		count++;
@@ -89,57 +93,58 @@ void addNode(Node** head, Node* newNode) {		// List에 node를 마지막에 추�
 			horse = horse->next;
 		}
 
-		horse->next = newNode;		// List 연결
+		// List 연결
+		horse->next = newNode;
+		newNode->prev = horse;
 	}
 }
 
 void insertNode(Node* current, Node* newNode) {		// List 중간에 node 삽입
 
-	// current is not tail
-	if (current->next != NULL) {
+	// head
+	if (current->prev == NULL) {
 
 		newNode->next = current->next;
+		newNode->prev = current;
 		current->next = newNode;
 	}
 	else {
-		addNode(&current, newNode);
+		// if tail
+		if (current->next == NULL) {
+			addNode(&current, newNode);
+		}
+		// in the middle
+		else {
+
+			current->next->prev = newNode;
+			newNode->prev = current;
+			newNode->next = current->next;
+			current->next = newNode;
+		}
 	}
 }
 
 void removeNode(Node** head, Node* remove) {		// List의 node 제거
-	
+
 	// remove node is head
 	if (*head == remove) {
 
 		*head = remove->next;
 	}
-	// remove is not tail
-	else if (remove->next != NULL) {
 
-		Node** preNode = getNodeAt(head, (countNode(head, remove) - 1));
-		(*preNode)->next = remove->next;
+	// when remove node has next link to go
+	if (remove->next != NULL) {
+
+		remove->next->prev = remove->prev;
 	}
-	else {
 
-		Node** preNode = getNodeAt(head, (countNode(head, remove) - 1));
-		(*preNode)->next = NULL;
+	// when removie node has prev link to go
+	if (remove->prev != NULL) {
+
+		remove->prev->next = remove->next;
 	}
 
 	deleteNode(remove);
-}
-
-int countNode(Node** head, Node* index) {		// List 내 node의 위치(index)를 구하는 함수
-
-	int count = 0;
-	Node* horse = (*head);
-
-	while (horse != index) {
-
-		horse = horse->next;
-		count++;
-	}
-
-	return count;
 }
 
 int main() {
@@ -163,7 +168,7 @@ int main() {
 		addNode(&List, newNode);
 	}
 
-	count = totalCountNode(List);
+	count = countNode(List);
 	for (i = 0; i < count; i++) {
 
 		curr = getNodeAt(List, i);
@@ -180,22 +185,24 @@ int main() {
 	curr = getNodeAt(List, 4);
 	insertNode(curr, newNode);
 
-	count = totalCountNode(List);
+	count = countNode(List);
 	for (i = 0; i < count; i++) {
+
 		curr = getNodeAt(List, i);
 		printf("List[%d] = %d\n", i, curr->data);
 	}
 	printf("---------- After 2 Nodes inserted ----------\n\n");
 
-	
+
 	newNode = getNodeAt(List, 1);
 	removeNode(&List, newNode);
 
 	newNode = getNodeAt(List, 0);
 	removeNode(&List, newNode);
 
-	count = totalCountNode(List);
+	count = countNode(List);
 	for (i = 0; i < count; i++) {
+
 		curr = getNodeAt(List, i);
 		printf("List[%d] = %d\n", i, curr->data);
 	}
